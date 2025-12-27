@@ -58,4 +58,32 @@ public final class SentencepieceTokenizer {
         }
         return bridge.decode(rawIds as [NSNumber])
     }
+
+    // MARK: - Async Support
+
+    /// Asynchronously loads a SentencePiece model.
+    /// Use this to avoid blocking the main thread during heavy file I/O and initialization.
+    public static func load(modelPath: String, tokenOffset: Int = 0) async throws -> SentencepieceTokenizer {
+        return try await Task.detached(priority: .userInitiated) {
+            return try SentencepieceTokenizer(modelPath: modelPath, tokenOffset: tokenOffset)
+        }.value
+    }
+
+    /// Asynchronously encodes a text string into a sequence of token IDs.
+    public func encode(_ text: String) async -> [Int] {
+        return await Task.detached(priority: .userInitiated) {
+            return self.encode(text)
+        }.value
+    }
+
+    /// Asynchronously decodes a sequence of token IDs back into a text string.
+    public func decode(_ ids: [Int]) async -> String {
+        return await Task.detached(priority: .userInitiated) {
+            return self.decode(ids)
+        }.value
+    }
 }
+
+// MARK: - Sendable Support
+// The underlying C++ SentencePieceProcessor is immutable after loading and thread-safe for encoding/decoding.
+extension SentencepieceTokenizer: @unchecked Sendable {}
