@@ -59,67 +59,40 @@ public final class SentencepieceTokenizer {
         return bridge.decode(rawIds as [NSNumber])
     }
 
-    // MARK: - Async Support
-
-    /// Asynchronously loads a SentencePiece model.
-    /// Use this to avoid blocking the main thread during heavy file I/O and initialization.
-    public static func load(modelPath: String, tokenOffset: Int = 0) async throws -> SentencepieceTokenizer {
-        return try await Task.detached(priority: .userInitiated) {
-            return try SentencepieceTokenizer(modelPath: modelPath, tokenOffset: tokenOffset)
-        }.value
-    }
-
-    /// Asynchronously encodes a text string into a sequence of token IDs.
-    public func encode(_ text: String) async -> [Int] {
-        return await Task.detached(priority: .userInitiated) {
-            return self.encode(text)
-        }.value
-    }
-
-    /// Asynchronously decodes a sequence of token IDs back into a text string.
-    public func decode(_ ids: [Int]) async -> String {
-        return await Task.detached(priority: .userInitiated) {
-            return self.decode(ids)
-        }.value
-    }
-    
     /// Encodes text and prepares it for model inference with padding, truncation, and special tokens.
     /// - Parameters:
     ///   - text: The input text to tokenize.
     ///   - maxLength: The maximum length of the sequence (default: 128).
     ///   - addSpecialTokens: Whether to add BOS and EOS tokens (default: true).
     /// - Returns: A tuple containing the processed token IDs and the attention mask.
-    public func tokenize(text: String, maxLength: Int = 128, addSpecialTokens: Bool = true) async -> (ids: [Int], mask: [Int]) {
-        return await Task.detached(priority: .userInitiated) {
-             // 1. Raw Encoding
-            var ids = self.encode(text) // Use the synchronous internal encode
-            
-            // 2. Add Special Tokens
-            if addSpecialTokens {
-                ids = [self.bosTokenId] + ids + [self.eosTokenId]
+    public func tokenize(text: String, maxLength: Int = 128, addSpecialTokens: Bool = true) -> (ids: [Int], mask: [Int]) {
+        // 1. Raw Encoding
+        var ids = self.encode(text)
+        
+        // 2. Add Special Tokens
+        if addSpecialTokens {
+            ids = [self.bosTokenId] + ids + [self.eosTokenId]
+        }
+        
+        // 3. Padding & Truncation
+        let count = ids.count
+        if count > maxLength {
+            ids = Array(ids.prefix(maxLength))
+        } else {
+            let padCount = maxLength - count
+            if padCount > 0 {
+                ids += Array(repeating: self.padTokenId, count: padCount)
             }
-            
-            // 3. Padding & Truncation
-            let count = ids.count
-            if count > maxLength {
-                ids = Array(ids.prefix(maxLength))
-            } else {
-                let padCount = maxLength - count
-                if padCount > 0 {
-                    ids += Array(repeating: self.padTokenId, count: padCount)
-                }
-            }
-            
-            // 4. Create Attention Mask
-            // Valid tokens (including BOS/EOS) get 1, Padding gets 0
-            var mask = Array(repeating: 0, count: maxLength)
-            let validLength = min(count, maxLength)
-            for i in 0..<validLength {
-                mask[i] = 1
-            }
-            
-            return (ids, mask)
-        }.value
+        }
+        
+        // 4. Create Attention Mask
+        var mask = Array(repeating: 0, count: maxLength)
+        let validLength = min(count, maxLength)
+        for i in 0..<validLength {
+            mask[i] = 1
+        }
+        
+        return (ids, mask)
     }
 }
 
