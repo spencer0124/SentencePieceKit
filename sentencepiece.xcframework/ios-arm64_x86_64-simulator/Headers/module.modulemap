@@ -1,0 +1,4 @@
+module sentencepiece {
+    header "sentencepiece_processor.h"
+    export *
+}
