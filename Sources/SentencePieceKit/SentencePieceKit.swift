@@ -82,6 +82,45 @@ public final class SentencepieceTokenizer {
             return self.decode(ids)
         }.value
     }
+    
+    /// Encodes text and prepares it for model inference with padding, truncation, and special tokens.
+    /// - Parameters:
+    ///   - text: The input text to tokenize.
+    ///   - maxLength: The maximum length of the sequence (default: 128).
+    ///   - addSpecialTokens: Whether to add BOS and EOS tokens (default: true).
+    /// - Returns: A tuple containing the processed token IDs and the attention mask.
+    public func tokenize(text: String, maxLength: Int = 128, addSpecialTokens: Bool = true) async -> (ids: [Int], mask: [Int]) {
+        return await Task.detached(priority: .userInitiated) {
+             // 1. Raw Encoding
+            var ids = self.encode(text) // Use the synchronous internal encode
+            
+            // 2. Add Special Tokens
+            if addSpecialTokens {
+                ids = [self.bosTokenId] + ids + [self.eosTokenId]
+            }
+            
+            // 3. Padding & Truncation
+            let count = ids.count
+            if count > maxLength {
+                ids = Array(ids.prefix(maxLength))
+            } else {
+                let padCount = maxLength - count
+                if padCount > 0 {
+                    ids += Array(repeating: self.padTokenId, count: padCount)
+                }
+            }
+            
+            // 4. Create Attention Mask
+            // Valid tokens (including BOS/EOS) get 1, Padding gets 0
+            var mask = Array(repeating: 0, count: maxLength)
+            let validLength = min(count, maxLength)
+            for i in 0..<validLength {
+                mask[i] = 1
+            }
+            
+            return (ids, mask)
+        }.value
+    }
 }
 
 // MARK: - Sendable Support
