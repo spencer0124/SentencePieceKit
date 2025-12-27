@@ -25,10 +25,7 @@ let package = Package(
         ),
         .target(
             name: "SentencePieceKit",
-            dependencies: ["SentencePieceBridge"],
-            swiftSettings: [
-                .interoperabilityMode(.Cxx)
-            ]
+            dependencies: ["SentencePieceBridge"]
         ),
         .testTarget(
             name: "SentencePieceKitTests",
