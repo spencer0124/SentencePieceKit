@@ -19,8 +19,13 @@ let package = Package(
             path: "./sentencepiece.xcframework"
         ),
         .target(
-            name: "SentencePieceKit",
+            name: "SentencePieceBridge",
             dependencies: ["sentencepiece"],
+            publicHeadersPath: "include"
+        ),
+        .target(
+            name: "SentencePieceKit",
+            dependencies: ["SentencePieceBridge"],
             swiftSettings: [
                 .interoperabilityMode(.Cxx)
             ]

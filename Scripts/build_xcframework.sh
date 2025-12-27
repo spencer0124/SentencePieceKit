@@ -19,7 +19,7 @@ NC='\033[0m'
 echo -e "${BLUE}🚀 Starting SentencePieceKit Build Process...${NC}"
 
 # 0. 필수 도구 점검
-for cmd in cmake lipo xcodebuild wget; do
+for cmd in cmake lipo xcodebuild; do
     if ! command -v $cmd &> /dev/null; then
         echo "❌ Error: '$cmd' is not installed. Please install it first."
         exit 1
@@ -43,7 +43,7 @@ echo -e "${GREEN}[2/8] Checking for iOS Toolchain...${NC}"
 if [ ! -f "cmake/ios.toolchain.cmake" ]; then
     echo -e "${YELLOW}  - Toolchain missing. Downloading from leetal/ios-cmake...${NC}"
     mkdir -p cmake
-    wget -q -O cmake/ios.toolchain.cmake "$TOOLCHAIN_URL"
+    curl -sL -o cmake/ios.toolchain.cmake "$TOOLCHAIN_URL"
     echo -e "  - Downloaded ios.toolchain.cmake"
 else
     echo -e "  - Toolchain already exists."
@@ -102,12 +102,13 @@ cmake --build build_watchos_sim --config Release -j8
 cmake --install build_watchos_sim --config Release --prefix staged_watchos_sim
 
 # 8. Generate & Copy Modulemap & Create XCFramework
+# 모듈 이름을 'SentencePieceCpp'로 변경하여 네임스페이스 충돌 방지
 echo -e "${GREEN}[8/8] Configuring Modulemaps & Creating XCFramework...${NC}"
-echo 'module sentencepiece {
+echo 'module SentencePieceCpp {
     header "sentencepiece_processor.h"
     export *
+    requires cplusplus
 }' > module.modulemap
-
 cp module.modulemap staged_ios_device/include/
 cp module.modulemap staged_ios_sim_combined/include/
 cp module.modulemap staged_macos/include/

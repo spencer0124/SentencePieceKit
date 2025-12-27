@@ -1,4 +1,5 @@
-module sentencepiece {
+module SentencePieceCpp {
     header "sentencepiece_processor.h"
     export *
+    requires cplusplus
 }
