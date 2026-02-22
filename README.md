@@ -78,4 +78,4 @@ Ensure you have the following tools installed on your Mac:
 ## 📝 License
 
 - **SentencePiece**: Apache License 2.0 (Google)
-- **SentencePieceKit**: [MIT License](LICENSE)
+- **SentencePieceKit**: [Apache License 2.0](LICENSE)
